@@ -7,49 +7,45 @@
 */
 
 #include <iostream>
+#include <vector>
 #include "constants.hpp"
 #include "output_block.hpp"
 #include "CRC.h"
 
 // Encodes a block of unencoded data into a block encoded with RLE.
 // TODO: Improve on this.
-const RLE_Encoded_Block encode_into_RLE_block(const Unencoded_Block& unencoded_block, const u32& block_size) {
-    RLE_Encoded_Block RLE_block;
+const RLE_Data encode_into_RLE_block(const Unencoded_Block& unencoded_block, const u32& block_size) {
+    RLE_Data rle_data;
 
     for (u32 i = 0; i < block_size; ++i) {
-        RLE_block.push_back((u16) unencoded_block.at(i));
+        rle_data.push_back((u16) unencoded_block.at(i));
     }
+    rle_data.push_back(EOB_SYMBOL);
 
-    return RLE_block;
+    return rle_data;
 }
 
 // Calculates the CRC value for a block of uncompressed data.
 u32 calculate_crc(const Unencoded_Block& unencoded_block, const u32& block_size) {
     auto crc_table = CRC::CRC_32().MakeTable();
-    /*
-    u32 crc = CRC::Calculate(unencoded_block.at(0), 1, crc_table);
-
-    for (u32 i = 1; i < block_size; ++i) {
-        crc = CRC::Calculate(unencoded_block.at(i),1, crc_table, crc);
-    } */
-    u32 crc = CRC::Calculate(unencoded_block.data(), block_size, crc_table);
-
-    return crc;
+    return CRC::Calculate(unencoded_block.data(), block_size, crc_table);
 }
 
-// Compresses a block of data and writes it to standard output.
-void write_block(const Unencoded_Block& unencoded_block, const u32& block_size) {
-
+// Creates a block of compressed RLE data.
+const RLE_Block create_RLE_block(const Unencoded_Block& unencoded_block, const u32& block_size) {
     u32 crc = calculate_crc(unencoded_block, block_size);
-    auto rle_block = encode_into_RLE_block(unencoded_block, block_size);
+    auto rle_block_data = encode_into_RLE_block(unencoded_block, block_size);
 
-    output_to_stream(rle_block, crc);
+    return RLE_Block{rle_block_data, crc, 0};
 }
 
 int main(){
 
     u32 block_size{};
     char next_byte{};
+
+    std::vector <const RLE_Block> all_encoded_blocks;
+
     Unencoded_Block unencoded_block{};
 
     if (std::cin.get(next_byte)) {
@@ -61,13 +57,15 @@ int main(){
 
             //If we get to this point, we just added a byte to the block AND there is at least one more byte in the input waiting to be written.
             if (block_size == unencoded_block.max_size()){
-                write_block(unencoded_block, block_size);
+                all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
                 block_size = 0;
             }
         }
     }
 
     if (block_size) {
-        write_block(unencoded_block, block_size);
+        all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
     }
+
+
 }

@@ -13,10 +13,18 @@
 #define OUTPUT_BLOCK_H
 
 #include <cassert>
+#include <iostream>
 #include "constants.hpp"
 #include "output_stream.hpp"
 
-void output_to_stream(const RLE_Encoded_Block& RLE_Block, u32 crc) {
+enum Output_Stage {
+    Data,
+    BWT_Row_Index,
+    CRC,
+    End_of_Block
+};
+
+void output_to_stream(const std::vector<const RLE_Data> all_blocks) {
     static OutputBitStream stream{std::cout};
 
     //Create a static frequency table with a frequency of 1 for 
@@ -63,11 +71,46 @@ void output_to_stream(const RLE_Encoded_Block& RLE_Block, u32 crc) {
 
     u32 symbol_count{};
 
+    // Index in all_blocks of the current block being processed
+    u32 current_block_index = 0;
+    // Current index in the block being processed
+    u32 current_symbol_index = 0;
+    // Indicates if the BET row index for
+    Output_Stage stage = Data;
+
     while(1){
 
         u32 symbol;
-        if (symbol_count < RLE_Block.size()) {
-            symbol = (u32) RLE_Block.at(symbol_count++);
+        if (current_block < all_blocks.size()) {
+
+            // The current block being processed
+            const RLE_Block& current_block = all_blocks.at(current_block_index);
+
+            switch (stage) {
+                case Data:
+                    symbol = (u32) current_block.data.at(current_symbol_index++);
+                    if (current_symbol_index >= current_block.data.size()) {
+                        stage = BWT_Row_Index;
+                        current_symbol_index = 0;
+                    }
+                    break;
+                case BWT_Row_Index:
+                    symbol = current_block.row_index;
+                    stage = CRC;
+                    break;
+                case CRC:
+                    symbol = current_block.crc;
+                    stage = End_of_Block;
+                    break;
+                case End_of_Block:
+                    symbol = EOB_SYMBOL;
+                    stage = Data;
+                    ++current_block_index;
+                    break;
+                default:
+                    std::cerr << "ERROR: Invalid block output state." << std::endl;
+                    exit(EXIT_FAILURE);
+            }
         } else {
             //If we couldn't retrieve a character, set the next symbol
             //to the EOF marker 

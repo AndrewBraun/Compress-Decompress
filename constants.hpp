@@ -22,12 +22,18 @@ using u64 = std::uint64_t;
 
 const int BLOCK_MAX = 50000;
 
-using Block = std::array<u8, BLOCK_MAX>;
-using RLE_Encoded_Block = std::vector<u16>;
 using Unencoded_Block = std::array<u8, BLOCK_MAX>;
+using RLE_Data = std::vector<u16>;
 
-const u32 RA = 256;
-const u32 RB = 257;
-const u32 EOF_SYMBOL = 258;
+struct RLE_Block {
+    RLE_Data data; // block of data encrypted with RLE
+    u32 crc; // CRC for the block of data
+    u32 row_index; // Row index for BWT
+};
+
+const u32 RA = 256; // Run-length symbol for RLE
+const u32 RB = 257; // Run-length symbol for RLE
+const u32 EOB_SYMBOL = 258; // Indicates the end of an RLE block
+const u32 EOF_SYMBOL = 258; // Indicates the end of the data stream.
 
 #endif
