@@ -12,6 +12,39 @@
 #include "input_file.hpp"
 #include "CRC.h"
 
+// Undoes Move-To-Front encoding
+void move_to_front_decode(Unencoded_Block& block) {
+    // Initialize the stack
+    // Each entry is indexed by the symbol and contains its position in the stack.
+    std::array<u8, 256> stack;
+    for (u16 i = 0; i <= 255; ++i) {
+        stack.at(i) = (u8) i;
+    }
+
+    for (u32 i = 0; i < block.size(); ++i) {
+        u8 mtf_symbol = block.at(i);
+    }
+
+    /*
+    for (u32 i = 0; i < block_size; ++i) {
+        u8 input_symbol = block.at(i);
+        u8 stack_value = stack.at(input_symbol); // Position of the input symbol in the stack
+        unencoded_block.at(i) = stack_value;
+
+        // Adjust the stack
+        if (stack_value != 0) {
+            // Adjust other stack values
+            for (u8& other_stack_value : stack) {
+                if (other_stack_value < stack_value)
+                    ++other_stack_value;
+            }
+
+            stack.at(input_symbol) = 0; // Move the symbol to the top of the stack
+        }
+    }
+    */
+}
+
 Unencoded_Block decompress_RLE(const RLE_Data& rle_block) {
     Unencoded_Block unencoded_block;
 
