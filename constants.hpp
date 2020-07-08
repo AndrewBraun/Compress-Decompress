@@ -22,7 +22,7 @@ using u64 = std::uint64_t;
 
 const int BLOCK_MAX = 50000;
 
-using Unencoded_Block = std::array<u8, BLOCK_MAX>;
+using Unencoded_Block = std::vector<u8>;
 using RLE_Data = std::vector<u16>;
 
 struct RLE_Block {

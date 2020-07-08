@@ -9,7 +9,7 @@
 #include <iostream>
 #include <vector>
 #include "constants.hpp"
-#include "output_block.hpp"
+#include "output_file.hpp"
 #include "CRC.h"
 
 // Encodes a block of unencoded data into a block encoded with RLE.
@@ -20,7 +20,6 @@ const RLE_Data encode_into_RLE_block(const Unencoded_Block& unencoded_block, con
     for (u32 i = 0; i < block_size; ++i) {
         rle_data.push_back((u16) unencoded_block.at(i));
     }
-    rle_data.push_back(EOB_SYMBOL);
 
     return rle_data;
 }
@@ -36,7 +35,7 @@ const RLE_Block create_RLE_block(const Unencoded_Block& unencoded_block, const u
     u32 crc = calculate_crc(unencoded_block, block_size);
     auto rle_block_data = encode_into_RLE_block(unencoded_block, block_size);
 
-    return RLE_Block{rle_block_data, crc, 0};
+    return RLE_Block{rle_block_data, crc, 0x44332211};
 }
 
 int main(){
@@ -44,19 +43,20 @@ int main(){
     u32 block_size{};
     char next_byte{};
 
-    std::vector <const RLE_Block> all_encoded_blocks;
+    std::vector <RLE_Block> all_encoded_blocks;
 
     Unencoded_Block unencoded_block{};
 
     if (std::cin.get(next_byte)) {
         while(1){
 
-            unencoded_block.at(block_size++) = next_byte;
+            unencoded_block.push_back(next_byte);
+            ++block_size;
             if (!std::cin.get(next_byte))
                 break;
 
             //If we get to this point, we just added a byte to the block AND there is at least one more byte in the input waiting to be written.
-            if (block_size == unencoded_block.max_size()){
+            if (block_size == BLOCK_MAX){
                 all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
                 block_size = 0;
             }
@@ -66,6 +66,4 @@ int main(){
     if (block_size) {
         all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
     }
-
-
 }

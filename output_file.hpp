@@ -24,7 +24,7 @@ enum Output_Stage {
     End_of_Block
 };
 
-void output_to_stream(const std::vector<const RLE_Data> all_blocks) {
+void output_to_stream(std::vector<RLE_Block>& all_blocks) {
     static OutputBitStream stream{std::cout};
 
     //Create a static frequency table with a frequency of 1 for 
@@ -69,8 +69,6 @@ void output_to_stream(const std::vector<const RLE_Data> all_blocks) {
 
     int underflow_counter = 0;
 
-    u32 symbol_count{};
-
     // Index in all_blocks of the current block being processed
     u32 current_block_index = 0;
     // Current index in the block being processed
@@ -81,7 +79,7 @@ void output_to_stream(const std::vector<const RLE_Data> all_blocks) {
     while(1){
 
         u32 symbol;
-        if (current_block < all_blocks.size()) {
+        if (current_block_index < all_blocks.size()) {
 
             // The current block being processed
             const RLE_Block& current_block = all_blocks.at(current_block_index);

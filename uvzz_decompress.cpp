@@ -9,48 +9,41 @@
 #include <iostream>
 #include <cstdlib>
 #include "constants.hpp"
-#include "input_block.hpp"
+#include "input_file.hpp"
 #include "CRC.h"
 
-Unencoded_Block decompress_RLE(const RLE_Encoded_Block& rle_block) {
+Unencoded_Block decompress_RLE(const RLE_Data& rle_block) {
     Unencoded_Block unencoded_block;
 
-    for (auto i = 0u; i < rle_block.size(); ++i) {
-        unencoded_block.at(i) = (u8) rle_block.at(i);
+    for (u16 rle_symbol : rle_block) {
+        unencoded_block.push_back( (u8) rle_symbol);
     }
 
     return unencoded_block;
 }
 
-void decompress_block(const input_result& input) {
-    for (auto symbol : input.rle_block) {
-        std::cout.put((u8) symbol);
-    }
-    /*
-    auto unencoded_block = decompress_RLE(input.rle_block);
+void decompress_block(const RLE_Block& rle_block) {
+    
+    auto unencoded_block = decompress_RLE(rle_block.data);
 
     auto crc_table = CRC::CRC_32().MakeTable();
-    u32 crc = CRC::Calculate(unencoded_block.data(), input.rle_block.size(), crc_table);
+    u32 crc = CRC::Calculate(unencoded_block.data(), unencoded_block.size(), crc_table);
     //if (crc != input.crc) {
     //    std::cerr << "ERROR: compressed file's CRC code does not match the compressed input.";
     //    exit(EXIT_FAILURE);
     //}
-    for (auto i = 0u; i < input.rle_block.size(); ++i) {
-        std::cout.put(unencoded_block.at(i));
-    } */
+    for (u8 symbol : unencoded_block) {
+        std::cout.put(symbol);
+    }
 }
 
 int main(){
 
-    input_result compressed_block_input = read_block_from_input();
+    std::vector<RLE_Block> all_blocks = read_input();
 
-    // Keep reading blocks until the input is done.
-    while(!compressed_block_input.done) {
+    // Uncompress all the blocks
+    for(RLE_Block& block : all_blocks) {
         // Process the compressed block
-        decompress_block(compressed_block_input);
-
-        compressed_block_input = read_block_from_input();
+        decompress_block(block);
     }
-
-    decompress_block(compressed_block_input);
 }

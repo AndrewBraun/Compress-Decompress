@@ -9,19 +9,9 @@
 #include "constants.hpp"
 #include "input_stream.hpp"
 
-// The result from calling read_block_from_input.
-struct input_result {
-    input_result (const RLE_Encoded_Block& rle_block_, const u32 crc_, const bool& done_)
-        : rle_block(rle_block_), crc(crc_), done(done_) {}
-
-    RLE_Encoded_Block rle_block; // Block of data compressed using RLE
-    u32 crc; // CRC corresponding to the uncompressed data for the given block
-    bool done; // Indicates if the stream is done reading data.
-};
-
 // Reads a block of input from the stream using Arithmetic Coding.
 // Outputs a block of RLE literal and run length symbols.
-input_result read_block_from_input() {
+std::vector<RLE_Block> read_input() {
     static InputBitStream stream{std::cin};
     
     //Create a static frequency table with a frequency of 1 for 
@@ -69,8 +59,9 @@ input_result read_block_from_input() {
         encoded_bits = (encoded_bits<<1) | stream.read_bit();
     }
 
-    RLE_Encoded_Block rle_block;
-    rle_block.reserve(BLOCK_MAX);
+    std::vector <RLE_Block> all_blocks;
+    RLE_Block current_rle_block{};
+    std::cerr << "Starting to read input" << std::endl;
 
     while(1){
         //For safety, we will use u64 for all of our intermediate calculations.
@@ -96,7 +87,25 @@ input_result read_block_from_input() {
             break;
             
         //Output the symbol
-        rle_block.push_back((u16) symbol);
+        if (symbol == EOB_SYMBOL) { // If this is the end of the block
+            u32 crc_high = (u32) current_rle_block.data.back(); // high order bits of the CRC code
+            current_rle_block.data.pop_back();
+            u32 crc_low = (u32) current_rle_block.data.back(); // low order bits of the CRC code
+            current_rle_block.data.pop_back();
+            u32 row_high = (u32) current_rle_block.data.back(); // high order bits of the BWT row code
+            current_rle_block.data.pop_back();
+            u32 row_low = (u32) current_rle_block.data.back(); // low order bits of the BWT row code
+            current_rle_block.data.pop_back();
+
+            current_rle_block.crc = crc_high << 16 | crc_low;
+            current_rle_block.row_index = row_high << 16 | row_low;
+            all_blocks.push_back(current_rle_block);
+            current_rle_block = RLE_Block{};
+            std::cerr << "Completed another block" << std::endl;
+
+        } else {
+            current_rle_block.data.push_back((u16) symbol);
+        }
 
         //Now that we know what symbol comes next, we repeat the same process as the compressor
         //to prepare for the next iteration.
@@ -171,9 +180,8 @@ input_result read_block_from_input() {
         }
     }
 
-    //u32 crc = stream.read_u32();
-    u32 crc = 0;
-    return input_result(rle_block, crc, stream.is_done());
+    std::cerr << "Finished reading all blocks" << std::endl;
+    return all_blocks;
 }
 
 #endif
