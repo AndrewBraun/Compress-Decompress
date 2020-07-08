@@ -35,7 +35,7 @@ const RLE_Block create_RLE_block(const Unencoded_Block& unencoded_block, const u
     u32 crc = calculate_crc(unencoded_block, block_size);
     auto rle_block_data = encode_into_RLE_block(unencoded_block, block_size);
 
-    return RLE_Block{rle_block_data, crc, 0x44332211};
+    return RLE_Block{rle_block_data, crc, 123456789};
 }
 
 int main(){
@@ -58,6 +58,7 @@ int main(){
             //If we get to this point, we just added a byte to the block AND there is at least one more byte in the input waiting to be written.
             if (block_size == BLOCK_MAX){
                 all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
+                unencoded_block.clear();
                 block_size = 0;
             }
         }
@@ -66,4 +67,6 @@ int main(){
     if (block_size) {
         all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
     }
+
+    output_to_stream(all_encoded_blocks);
 }

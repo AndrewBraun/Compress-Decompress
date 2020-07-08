@@ -61,7 +61,6 @@ std::vector<RLE_Block> read_input() {
 
     std::vector <RLE_Block> all_blocks;
     RLE_Block current_rle_block{};
-    std::cerr << "Starting to read input" << std::endl;
 
     while(1){
         //For safety, we will use u64 for all of our intermediate calculations.
@@ -88,20 +87,29 @@ std::vector<RLE_Block> read_input() {
             
         //Output the symbol
         if (symbol == EOB_SYMBOL) { // If this is the end of the block
-            u32 crc_high = (u32) current_rle_block.data.back(); // high order bits of the CRC code
+            u32 crc_highest = ((u32) current_rle_block.data.back()) << 24; // highest order bits of the CRC code
             current_rle_block.data.pop_back();
-            u32 crc_low = (u32) current_rle_block.data.back(); // low order bits of the CRC code
+            u32 crc_high = ((u32) current_rle_block.data.back()) << 16; // second highest order bits of the CRC code
             current_rle_block.data.pop_back();
-            u32 row_high = (u32) current_rle_block.data.back(); // high order bits of the BWT row code
+            u32 crc_low = ((u32) current_rle_block.data.back()) << 8; // second lowest order bits of the CRC code
             current_rle_block.data.pop_back();
-            u32 row_low = (u32) current_rle_block.data.back(); // low order bits of the BWT row code
+            u32 crc_lowest = (u32) current_rle_block.data.back(); // lowest order bits of the CRC code
             current_rle_block.data.pop_back();
 
-            current_rle_block.crc = crc_high << 16 | crc_low;
-            current_rle_block.row_index = row_high << 16 | row_low;
+            u32 row_highest = (u32) current_rle_block.data.back() << 24; // highest order bits of the BWT row code
+            current_rle_block.data.pop_back();
+            u32 row_high = (u32) current_rle_block.data.back() << 16; // second highest order bits of the BWT row code
+            current_rle_block.data.pop_back();
+            u32 row_low = (u32) current_rle_block.data.back() << 8; // second lowest order bits of the BWT row code
+            current_rle_block.data.pop_back();
+            u32 row_lowest = (u32) current_rle_block.data.back(); // lowest order bits of the BWT row code
+            current_rle_block.data.pop_back();
+
+            current_rle_block.crc = crc_highest | crc_high | crc_low | crc_lowest;
+            current_rle_block.row_index = row_highest | row_high | row_low | row_lowest;
             all_blocks.push_back(current_rle_block);
+
             current_rle_block = RLE_Block{};
-            std::cerr << "Completed another block" << std::endl;
 
         } else {
             current_rle_block.data.push_back((u16) symbol);
@@ -180,7 +188,6 @@ std::vector<RLE_Block> read_input() {
         }
     }
 
-    std::cerr << "Finished reading all blocks" << std::endl;
     return all_blocks;
 }
 

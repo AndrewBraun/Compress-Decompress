@@ -75,6 +75,12 @@ void output_to_stream(std::vector<RLE_Block>& all_blocks) {
     u32 current_symbol_index = 0;
     // Indicates if the BET row index for
     Output_Stage stage = Data;
+    // output_to_stream writes a 32-bit value as 4 symbols (each corresponding to 8 bits).
+    // byte_level indicates what set of bits to write next.
+    // byte_level = 0 cooresponds to the least significant bits,
+    // while byte_level = 3 corresponds to the most significant bits.
+    // This is used for the 32-bit CRC and BET row values
+    u8 byte_level = 0;
 
     while(1){
 
@@ -93,16 +99,23 @@ void output_to_stream(std::vector<RLE_Block>& all_blocks) {
                     }
                     break;
                 case BWT_Row_Index:
-                    symbol = current_block.row_index;
-                    stage = CRC;
+                    symbol = (current_block.row_index >> (8 * byte_level)) & 255;
+                    if (byte_level == 3) {
+                        stage = CRC;
+                    }
+                    byte_level = (byte_level + 1) % 4;
                     break;
                 case CRC:
-                    symbol = current_block.crc;
-                    stage = End_of_Block;
+                    symbol = (current_block.crc >> (8 * byte_level)) & 255;
+                    if (byte_level == 3) {
+                        stage = End_of_Block;
+                    }
+                    byte_level = (byte_level + 1) % 4;
                     break;
                 case End_of_Block:
                     symbol = EOB_SYMBOL;
                     stage = Data;
+
                     ++current_block_index;
                     break;
                 default:

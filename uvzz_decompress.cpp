@@ -28,10 +28,11 @@ void decompress_block(const RLE_Block& rle_block) {
 
     auto crc_table = CRC::CRC_32().MakeTable();
     u32 crc = CRC::Calculate(unencoded_block.data(), unencoded_block.size(), crc_table);
-    //if (crc != input.crc) {
-    //    std::cerr << "ERROR: compressed file's CRC code does not match the compressed input.";
-    //    exit(EXIT_FAILURE);
-    //}
+
+    if (crc != rle_block.crc) {
+        std::cerr << "ERROR: compressed file's CRC code does not match the compressed input.";
+        exit(EXIT_FAILURE);
+    }
     for (u8 symbol : unencoded_block) {
         std::cout.put(symbol);
     }
