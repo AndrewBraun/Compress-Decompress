@@ -16,8 +16,19 @@
 Unencoded_Block decompress_RLE(const RLE_Data& rle_block) {
     Unencoded_Block unencoded_block;
 
-    for (u16 rle_symbol : rle_block) {
-        unencoded_block.push_back( (u8) rle_symbol);
+    auto iterator = rle_block.begin();
+    while (iterator != rle_block.end()) {
+        u8 symbol = (u8) *iterator;
+        unencoded_block.push_back(symbol);
+
+        if (symbol == 0) {
+            u8 run_length = *(++iterator);
+            for (u16 i = 0; i < run_length; ++i) {
+                unencoded_block.push_back(0);
+            }
+        }
+
+        ++iterator;
     }
 
     return unencoded_block;

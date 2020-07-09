@@ -14,12 +14,23 @@
 #include "CRC.h"
 
 // Encodes a block of unencoded data into a block encoded with RLE.
-// TODO: Improve on this.
 const RLE_Data encode_into_RLE_block(const Unencoded_Block& unencoded_block, const u32& block_size) {
     RLE_Data rle_data;
 
     for (u32 i = 0; i < block_size; ++i) {
-        rle_data.push_back((u16) unencoded_block.at(i));
+        u16 symbol = unencoded_block.at(i);
+        rle_data.push_back(symbol);
+
+        // Encode run length of zeroes
+        if (symbol == 0) {
+            u16 run_length = 0;
+            while (i + 1 < block_size && unencoded_block.at(i + 1) == 0 && run_length < 255) {
+                ++i;
+                ++run_length;
+            }
+
+            rle_data.push_back(run_length);
+        }
     }
 
     return rle_data;
