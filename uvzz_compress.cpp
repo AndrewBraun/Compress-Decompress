@@ -9,35 +9,9 @@
 #include <iostream>
 #include <vector>
 #include "constants.hpp"
+#include "move_to_front.hpp"
 #include "output_file.hpp"
 #include "CRC.h"
-
-// Transforms a block of 8-bit symbols into a move-to-front encoded version.
-void move_to_front_encode(Unencoded_Block& block, const u32& block_size) {
-    // Initialize the stack
-    // Each entry is indexed by the symbol and contains its position in the stack.
-    std::array<u8, 256> stack;
-    for (u16 i = 0; i <= 255; ++i) {
-        stack.at(i) = (u8) i;
-    }
-
-    for (u32 i = 0; i < block_size; ++i) {
-        u8 input_symbol = block.at(i);
-        u8 stack_value = stack.at(input_symbol); // Position of the input symbol in the stack
-        unencoded_block.at(i) = stack_value;
-
-        // Adjust the stack
-        if (stack_value != 0) {
-            // Adjust other stack values
-            for (u8& other_stack_value : stack) {
-                if (other_stack_value < stack_value)
-                    ++other_stack_value;
-            }
-
-            stack.at(input_symbol) = 0; // Move the symbol to the top of the stack
-        }
-    }
-}
 
 // Encodes a block of unencoded data into a block encoded with RLE.
 // TODO: Improve on this.
@@ -58,8 +32,9 @@ u32 calculate_crc(const Unencoded_Block& unencoded_block, const u32& block_size)
 }
 
 // Creates a block of compressed RLE data.
-const RLE_Block create_RLE_block(const Unencoded_Block& unencoded_block, const u32& block_size) {
+const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block, const u32& block_size) {
     u32 crc = calculate_crc(unencoded_block, block_size);
+    move_to_front_encode(unencoded_block, block_size);
     auto rle_block_data = encode_into_RLE_block(unencoded_block, block_size);
 
     return RLE_Block{rle_block_data, crc, 123456789};
