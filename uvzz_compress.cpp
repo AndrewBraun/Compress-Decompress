@@ -49,18 +49,24 @@ const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block, const u32& bl
 
     auto bwt_pair = bwt(unencoded_block);
     std::vector<u16>& bwt_data = bwt_pair.first;
-/*
+
     std::cerr << "BWT Block" << std::endl;
-    for (auto symbol : bwt_data) {
-        std::cerr << '"' << (u8) symbol << '"' << std::endl;
-    } */
+    for (auto i = 0u; i < bwt_data.size(); ++i) {
+        std::cerr << ' ' << bwt_data.at(i) << ' ';
+        if (i % 15 == 15) {
+            std::cerr << std::endl;
+        }
+    }
 
     move_to_front_encode(bwt_data);
-/*
-    std::cerr << "Move to front block" << std::endl;
-    for (auto symbol : bwt_data) {
-        std::cerr << '"' << symbol << '"' << std::endl;
-    } */
+
+    std::cerr << "Move to front Block" << std::endl;
+    for (auto i = 0u; i < bwt_data.size(); ++i) {
+        std::cerr << ' ' << bwt_data.at(i) << ' ';
+        if (i % 15 == 15) {
+            std::cerr << std::endl;
+        }
+    }
 
     auto rle_block_data = encode_into_RLE_block(bwt_data);
 

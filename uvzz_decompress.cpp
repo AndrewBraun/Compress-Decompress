@@ -38,17 +38,23 @@ std::vector<u16> decompress_RLE(const RLE_Data& rle_block) {
 void decompress_block(const RLE_Block& rle_block) {
     
     auto rle_decoded_block = decompress_RLE(rle_block.data);
-/*
-    std::cerr << "decoded rle block" << std::endl;
-    for (auto symbol : rle_decoded_block) {
-        std::cerr << '"' << symbol << '"' << std::endl;
-    } */
+
+    std::cerr << "RLE decoded Block" << std::endl;
+    for (auto i = 0u; i < rle_decoded_block.size(); ++i) {
+        std::cerr << ' ' << rle_decoded_block.at(i) << ' ';
+        if (i % 15 == 15) {
+            std::cerr << std::endl;
+        }
+    }
 
     move_to_front_decode(rle_decoded_block);
 
-    std::cerr << "After MTF" << std::endl;
-    for (auto symbol : rle_decoded_block) {
-        std::cerr << '"' << symbol << '"' << std::endl;
+    std::cerr << "RLE decoded Block" << std::endl;
+    for (auto i = 0u; i < rle_decoded_block.size(); ++i) {
+        std::cerr << ' ' << rle_decoded_block.at(i) << ' ';
+        if (i % 15 == 15) {
+            std::cerr << std::endl;
+        }
     }
 
     auto unencoded_block = inverse_bwt(rle_decoded_block, rle_block.row_index);
