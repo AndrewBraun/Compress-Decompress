@@ -19,7 +19,7 @@ std::vector<u16> decompress_RLE(const RLE_Data& rle_block) {
 
     auto iterator = rle_block.begin();
     while (iterator != rle_block.end()) {
-        auto symbol = (u8) *iterator;
+        auto symbol = *iterator;
         decoded_block.push_back(symbol);
 
         if (symbol == 0) {
@@ -36,26 +36,10 @@ std::vector<u16> decompress_RLE(const RLE_Data& rle_block) {
 }
 
 void decompress_block(const RLE_Block& rle_block) {
-    
+
     auto rle_decoded_block = decompress_RLE(rle_block.data);
 
-    std::cerr << "RLE decoded Block" << std::endl;
-    for (auto i = 0u; i < rle_decoded_block.size(); ++i) {
-        std::cerr << ' ' << rle_decoded_block.at(i) << ' ';
-        if (i % 15 == 15) {
-            std::cerr << std::endl;
-        }
-    }
-
     move_to_front_decode(rle_decoded_block);
-
-    std::cerr << "RLE decoded Block" << std::endl;
-    for (auto i = 0u; i < rle_decoded_block.size(); ++i) {
-        std::cerr << ' ' << rle_decoded_block.at(i) << ' ';
-        if (i % 15 == 15) {
-            std::cerr << std::endl;
-        }
-    }
 
     auto unencoded_block = inverse_bwt(rle_decoded_block, rle_block.row_index);
 

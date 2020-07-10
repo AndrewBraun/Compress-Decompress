@@ -2,6 +2,7 @@
 #define MOVE_TO_FRONT_H
 
 #include <algorithm>
+#include <cassert>
 #include "constants.hpp"
 
 // Initialize the stack
@@ -46,6 +47,10 @@ void move_to_front_decode(std::vector<u16>& block) {
     for (auto iterator = block.begin(); iterator != block.end(); ++iterator) {
         auto input_index = *iterator;
         auto stack_value_ptr = std::find(stack.begin(), stack.end(), input_index);
+        if (stack_value_ptr == stack.end()) {
+            std::cerr << "ERROR: compressed file was corrupted." << std::endl;
+            exit(EXIT_FAILURE);
+        }
         auto output_symbol = stack_value_ptr - stack.begin();
 
         *iterator = output_symbol;
