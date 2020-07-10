@@ -8,7 +8,7 @@
 // Each entry is indexed by the symbol and contains its position in the stack.
 std::array<u16, 257> get_stack() {
     std::array<u16, 257> stack;
-    for (u16 i = 0; i < stack.size(); ++i) {
+    for (u16 i = 0u; i < stack.size(); ++i) {
         stack.at(i) = i;
     }
     return stack;
@@ -23,6 +23,7 @@ void move_to_front_encode(RLE_Data& block) {
     for (auto iterator = block.begin(); iterator != block.end(); ++iterator) {
         auto input_symbol = *iterator;
         auto stack_value = stack.at(input_symbol); // Position of the input symbol in the stack
+
         *iterator = stack_value;
 
         // Adjust the stack
@@ -42,11 +43,12 @@ void move_to_front_encode(RLE_Data& block) {
 void move_to_front_decode(std::vector<u16>& block) {
     auto stack = get_stack();
 
-    for (u32 i = 0; i < block.size(); ++i) {
-        auto input_index = block.at(i);
+    for (auto iterator = block.begin(); iterator != block.end(); ++iterator) {
+        auto input_index = *iterator;
         auto stack_value_ptr = std::find(stack.begin(), stack.end(), input_index);
         auto output_symbol = stack_value_ptr - stack.begin();
-        block.at(i) = output_symbol;
+
+        *iterator = output_symbol;
 
         // Adjust the stack
         if (input_index != 0) {

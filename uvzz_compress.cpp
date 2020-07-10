@@ -18,8 +18,8 @@
 const RLE_Data encode_into_RLE_block(const RLE_Data& block) {
     RLE_Data rle_data;
 
-    for (u32 i = 0; i < block.size(); ++i) {
-        u16 symbol = block.at(i);
+    for (auto i = 0u; i < block.size(); ++i) {
+        auto symbol = block.at(i);
         rle_data.push_back(symbol);
 
         // Encode run length of zeroes
@@ -50,23 +50,7 @@ const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block, const u32& bl
     auto bwt_pair = bwt(unencoded_block);
     std::vector<u16>& bwt_data = bwt_pair.first;
 
-    std::cerr << "BWT Block" << std::endl;
-    for (auto i = 0u; i < bwt_data.size(); ++i) {
-        std::cerr << ' ' << bwt_data.at(i) << ' ';
-        if (i % 15 == 15) {
-            std::cerr << std::endl;
-        }
-    }
-
     move_to_front_encode(bwt_data);
-
-    std::cerr << "Move to front Block" << std::endl;
-    for (auto i = 0u; i < bwt_data.size(); ++i) {
-        std::cerr << ' ' << bwt_data.at(i) << ' ';
-        if (i % 15 == 15) {
-            std::cerr << std::endl;
-        }
-    }
 
     auto rle_block_data = encode_into_RLE_block(bwt_data);
 
