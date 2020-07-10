@@ -46,6 +46,11 @@ void decompress_block(const RLE_Block& rle_block) {
 
     move_to_front_decode(rle_decoded_block);
 
+    std::cerr << "After MTF" << std::endl;
+    for (auto symbol : rle_decoded_block) {
+        std::cerr << '"' << symbol << '"' << std::endl;
+    }
+
     auto unencoded_block = inverse_bwt(rle_decoded_block, rle_block.row_index);
 
     auto crc_table = CRC::CRC_32().MakeTable();
