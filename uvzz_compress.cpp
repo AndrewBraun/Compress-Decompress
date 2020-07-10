@@ -8,23 +8,24 @@
 
 #include <iostream>
 #include <vector>
+#include "BWT.hpp"
 #include "constants.hpp"
 #include "move_to_front.hpp"
 #include "output_file.hpp"
 #include "CRC.h"
 
 // Encodes a block of unencoded data into a block encoded with RLE.
-const RLE_Data encode_into_RLE_block(const Unencoded_Block& unencoded_block, const u32& block_size) {
+const RLE_Data encode_into_RLE_block(const RLE_Data& block) {
     RLE_Data rle_data;
 
-    for (u32 i = 0; i < block_size; ++i) {
-        u16 symbol = unencoded_block.at(i);
+    for (u32 i = 0; i < block.size(); ++i) {
+        u16 symbol = block.at(i);
         rle_data.push_back(symbol);
 
         // Encode run length of zeroes
         if (symbol == 0) {
             u16 run_length = 0;
-            while (i + 1 < block_size && unencoded_block.at(i + 1) == 0 && run_length < 255) {
+            while (i + 1 < block.size() && block.at(i + 1) == 0 && run_length < 255) {
                 ++i;
                 ++run_length;
             }
@@ -45,10 +46,25 @@ u32 calculate_crc(const Unencoded_Block& unencoded_block, const u32& block_size)
 // Creates a block of compressed RLE data.
 const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block, const u32& block_size) {
     u32 crc = calculate_crc(unencoded_block, block_size);
-    move_to_front_encode(unencoded_block, block_size);
-    auto rle_block_data = encode_into_RLE_block(unencoded_block, block_size);
 
-    return RLE_Block{rle_block_data, crc, 123456789};
+    auto bwt_pair = bwt(unencoded_block);
+    std::vector<u16>& bwt_data = bwt_pair.first;
+/*
+    std::cerr << "BWT Block" << std::endl;
+    for (auto symbol : bwt_data) {
+        std::cerr << '"' << (u8) symbol << '"' << std::endl;
+    } */
+
+    move_to_front_encode(bwt_data);
+/*
+    std::cerr << "Move to front block" << std::endl;
+    for (auto symbol : bwt_data) {
+        std::cerr << '"' << symbol << '"' << std::endl;
+    } */
+
+    auto rle_block_data = encode_into_RLE_block(bwt_data);
+
+    return RLE_Block{rle_block_data, crc, bwt_pair.second};
 }
 
 int main(){

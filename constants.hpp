@@ -20,7 +20,7 @@ using u16 = std::uint16_t;
 using u32 = std::uint32_t;
 using u64 = std::uint64_t;
 
-const u32 BLOCK_MAX = 50000;
+const u32 BLOCK_MAX = 20000;
 
 using Unencoded_Block = std::vector<u8>;
 using RLE_Data = std::vector<u16>;
@@ -30,12 +30,9 @@ struct RLE_Block {
     u32 crc; // CRC for the block of data
     u32 row_index; // Row index for BWT
 };
-/*
-const u32 RA = 256; // Run-length symbol for RLE
-const u32 RB = 257; // Run-length symbol for RLE
-const u32 EOB_SYMBOL = 258; // Indicates the end of an RLE block
-const u32 EOF_SYMBOL = 259; // Indicates the end of the data stream. */
-const u32 EOB_SYMBOL = 256; // Indicates the end of an RLE block
-const u32 EOF_SYMBOL = 257; // Indicates the end of the data stream.
+
+const u32 BWT_SYMBOL = 0; // Special symbol for suffix arrays
+const u32 EOB_SYMBOL = 257; // Indicates the end of an RLE block
+const u32 EOF_SYMBOL = 258; // Indicates the end of the data stream.
 
 #endif
