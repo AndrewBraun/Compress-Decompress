@@ -37,7 +37,7 @@ u32 upper_bound = ~0; //Bit sequence of all ones
 
 int underflow_counter = 0;
 
-// Initializes the static variables used
+// Initializes the static Arithmetic Coding variables
 void initialize() {
     frequencies.fill(1);
 
@@ -61,7 +61,10 @@ void initialize() {
     is_initialized = true;
 }
 
-void output_to_stream(const RLE_Block& block, const bool is_last) {
+// Outputs a block to the stream.
+// If output_eof is true, then instead of outputting a block,
+// this method will output only the End-of-File symbol.
+void output_to_stream(const RLE_Block& block, const bool output_eof) {
     static OutputBitStream stream{std::cout};
 
     if (!is_initialized) {
@@ -83,7 +86,7 @@ void output_to_stream(const RLE_Block& block, const bool is_last) {
     while(1){
 
         u32 symbol;
-        if (is_last) {
+        if (output_eof) {
             symbol = EOF_SYMBOL;
         }
         else if (!finished_block) {

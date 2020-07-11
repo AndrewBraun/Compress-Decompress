@@ -20,6 +20,8 @@
 
 bool is_initialized = false;
 
+InputBitStream stream{std::cin};
+
 std::array<u32, EOF_SYMBOL+1> frequencies {};
 std::array<u64, EOF_SYMBOL+2> CF_low {};
 u64 global_cumulative_frequency;
@@ -29,6 +31,7 @@ u32 upper_bound = ~0;
 
 u32 encoded_bits = 0;
 
+// Initializes the static Arithmetic Coding variables.
 void initialize() {
     frequencies.fill(1);
 
@@ -49,18 +52,19 @@ void initialize() {
     
     assert(global_cumulative_frequency <= 0xffffffff); //If this fails, frequencies must be scaled down
 
+    for(int i = 0; i < 32; i++){
+        encoded_bits = (encoded_bits<<1) | stream.read_bit();
+    }
+
     is_initialized = true;
 }
 
 // Reads a block of input from the stream using Arithmetic Coding.
+// If no more blocks can be read, this just returns an empty block.
 RLE_Block read_block() {
-    static InputBitStream stream{std::cin};
 
     if (!is_initialized) {
         initialize();
-        for(int i = 0; i < 32; i++){
-            encoded_bits = (encoded_bits<<1) | stream.read_bit();
-        }
     }
 
     RLE_Block current_block{}; // Current block being read
@@ -190,7 +194,7 @@ RLE_Block read_block() {
         }
 
         if (symbol == EOB_SYMBOL)
-            break;
+            break; // If the EOB sybol is encountered, we can return the block.
     }
 
     return current_block;

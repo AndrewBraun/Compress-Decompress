@@ -7,7 +7,7 @@ This is a compressor and decompressor for Path 1 (process-oriented) of Assignmen
 ## Compressed file format
 
 The format of a compressed file consists of a series of blocks. All the blocks are
-outputted at once using a basic Arithmetic Coding scheme. Each block starts with the
+outputted one at a time using a basic Arithmetic Coding scheme. Each block starts with the
 compressed data, which is then followed by these (in order):
 1. Index of the original row in the Burrows-Wheeler transform (32-bit unsigned integer).
 2. CRC number for the uncompressed data in the block (32-bit unsigned integer).
@@ -20,8 +20,8 @@ the End-of-Block symbol.
 
 The compressor (uvzz_compress.cpp) reads an input file from standard input. If it reads
 20000 bytes of uncompressed data, it creates a block from it and compresses it. It then
-continues to compress the input stream until all the data is in compressed blocks. It
-then outputs those blocks to standard output with Arithmetic Coding.
+continues to compress the input stream until all the data is in compressed blocks. All
+blocks are outputted with Arithmetic Coding.
 
 A block of data, representing up to 20000 bytes of uncompressed data, has the following
 actions performed on it by the compressor:
@@ -44,7 +44,8 @@ value to be used in Arithmetic Coding easily.
 ## Decompressor
 
 The decompressor (uvzz_decompress.cpp) reads a compressed input file from standard
-input. Whenever the decompressor reads an End-of-Block symbol, it creates a block.
+input. Whenever the decompressor reads an End-of-Block symbol, it creates a block and
+decompresses it.
 
 For each block, the decompressor first undoes the RLE and Move-to-Front transformations.
 Then, it processes each block using inverse BWT. The inverse BWT algorithm uses fast
@@ -63,4 +64,3 @@ The CRC.h file for calculating the CRC comes from D. Bahr.
 Many of the other algorithms used, including the input_stream.hpp and output_stream.hpp
 files as well as the Arithmetic Coding implementations come from B. Bird at the
 University of Victoria.
-
