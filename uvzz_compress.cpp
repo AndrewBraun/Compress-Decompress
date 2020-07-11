@@ -39,14 +39,14 @@ const RLE_Data encode_into_RLE_block(const RLE_Data& block) {
 }
 
 // Calculates the CRC value for a block of uncompressed data.
-u32 calculate_crc(const Unencoded_Block& unencoded_block, const u32& block_size) {
+u32 calculate_crc(const Unencoded_Block& unencoded_block) {
     auto crc_table = CRC::CRC_32().MakeTable();
-    return CRC::Calculate(unencoded_block.data(), block_size, crc_table);
+    return CRC::Calculate(unencoded_block.data(), unencoded_block.size(), crc_table);
 }
 
 // Creates a block of compressed RLE data.
-const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block, const u32& block_size) {
-    u32 crc = calculate_crc(unencoded_block, block_size);
+const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block) {
+    u32 crc = calculate_crc(unencoded_block);
 
     // Perform BWT on the unecoded block
     auto bwt_pair = bwt(unencoded_block);
@@ -63,7 +63,6 @@ const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block, const u32& bl
 
 int main(){
 
-    u32 block_size{};
     char next_byte{};
 
     std::vector <RLE_Block> all_encoded_blocks;
@@ -74,22 +73,20 @@ int main(){
         while(1){
 
             unencoded_block.push_back(next_byte);
-            ++block_size;
             if (!std::cin.get(next_byte))
                 break;
 
             // Finish a block and start a new one
-            if (block_size == BLOCK_MAX){
-                all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
+            if (unencoded_block.size() == BLOCK_MAX){
+                all_encoded_blocks.push_back(create_RLE_block(unencoded_block));
                 unencoded_block.clear();
-                block_size = 0;
             }
         }
     }
 
     // Create a new block if there still is data.
-    if (block_size) {
-        all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
+    if (unencoded_block.size()) {
+        all_encoded_blocks.push_back(create_RLE_block(unencoded_block));
     }
 
     output_to_stream(all_encoded_blocks);
