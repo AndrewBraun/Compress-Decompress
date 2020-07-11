@@ -1,12 +1,14 @@
-/* output_block.hpp
+/* output_file.hpp
    CSC 485B/CSC 578B/SENG 480B - Summer 2020
 
-   Outputs a block of compressed data to the output stream,
-   including the uncompressed data's CRC.
-   Uses an Arithmetic Coding algorithm by B. Bird.
+   Outputs the compressed data to standard output.
+   For compatibility with the Arithmetic Coding symbol table,
+   the 32-bit CRC and BWT row index values are outputted as
+   four 8-bit values.
 
    Andrew Braun
    V00851919
+   With code portions from B. Bird
 */ 
 
 #ifndef OUTPUT_BLOCK_H
@@ -17,7 +19,7 @@
 #include "constants.hpp"
 #include "output_stream.hpp"
 
-enum Output_Stage {
+enum Output_Stage { // The stage of output for the current block
     Data,
     BWT_Row_Index,
     CRC,
@@ -73,13 +75,13 @@ void output_to_stream(std::vector<RLE_Block>& all_blocks) {
     u32 current_block_index = 0;
     // Current index in the block being processed
     u32 current_symbol_index = 0;
-    // Indicates if the BET row index for
+    // What to output next for the given block
     Output_Stage stage = Data;
     // output_to_stream writes a 32-bit value as 4 symbols (each corresponding to 8 bits).
     // byte_level indicates what set of bits to write next.
     // byte_level = 0 cooresponds to the least significant bits,
     // while byte_level = 3 corresponds to the most significant bits.
-    // This is used for the 32-bit CRC and BET row values
+    // This is used for the 32-bit CRC and BWT row values.
     u8 byte_level = 0;
 
     while(1){
@@ -91,7 +93,7 @@ void output_to_stream(std::vector<RLE_Block>& all_blocks) {
             const RLE_Block& current_block = all_blocks.at(current_block_index);
 
             switch (stage) {
-                case Data:
+                case Data: // Output a compressed symbol to the stream
                     symbol = (u32) current_block.data.at(current_symbol_index++);
                     if (current_symbol_index >= current_block.data.size()) {
                         stage = BWT_Row_Index;

@@ -1,9 +1,10 @@
 /* uvzz_compress.cpp
-   CSC 485B/CSC 578B/SENG 480B
 
-   Placeholder starter code for A3
-
-   B. Bird - 06/23/2020
+   Compresses an inputted file.
+   
+   Andrew Braun
+   V00851919
+   With code portions from B. Bird
 */
 
 #include <iostream>
@@ -22,7 +23,7 @@ const RLE_Data encode_into_RLE_block(const RLE_Data& block) {
         auto symbol = block.at(i);
         rle_data.push_back(symbol);
 
-        // Encode run length of zeroes
+        // Encode a run length of the current symbol is 0
         if (symbol == 0) {
             u16 run_length = 0;
             while (i + 1 < block.size() && block.at(i + 1) == 0 && run_length < 255) {
@@ -47,11 +48,14 @@ u32 calculate_crc(const Unencoded_Block& unencoded_block, const u32& block_size)
 const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block, const u32& block_size) {
     u32 crc = calculate_crc(unencoded_block, block_size);
 
+    // Perform BWT on the unecoded block
     auto bwt_pair = bwt(unencoded_block);
     std::vector<u16>& bwt_data = bwt_pair.first;
 
+    // Perform Move-to-Front encoding on the block
     move_to_front_encode(bwt_data);
 
+    // Perform RLE on the block
     auto rle_block_data = encode_into_RLE_block(bwt_data);
 
     return RLE_Block{rle_block_data, crc, bwt_pair.second};
@@ -74,7 +78,7 @@ int main(){
             if (!std::cin.get(next_byte))
                 break;
 
-            //If we get to this point, we just added a byte to the block AND there is at least one more byte in the input waiting to be written.
+            // Finish a block and start a new one
             if (block_size == BLOCK_MAX){
                 all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
                 unencoded_block.clear();
@@ -83,6 +87,7 @@ int main(){
         }
     }
 
+    // Create a new block if there still is data.
     if (block_size) {
         all_encoded_blocks.push_back(create_RLE_block(unencoded_block, block_size));
     }

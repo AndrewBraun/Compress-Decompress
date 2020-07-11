@@ -1,6 +1,15 @@
 #ifndef INPUT_BLOCK_H
 #define INPUT_BLOCK_H
 
+/* input_file.hpp
+
+   Reads the compressed input file for the decompressor.
+   
+   Andrew Braun
+   V00851919
+   With code portions from B. Bird
+*/
+
 #include <iostream>
 #include <array>
 #include <string>
@@ -59,8 +68,8 @@ std::vector<RLE_Block> read_input() {
         encoded_bits = (encoded_bits<<1) | stream.read_bit();
     }
 
-    std::vector <RLE_Block> all_blocks;
-    RLE_Block current_rle_block{};
+    std::vector <RLE_Block> all_blocks; // List of all compressed blocks
+    RLE_Block current_rle_block{}; // Current block being read
 
     while(1){
         //For safety, we will use u64 for all of our intermediate calculations.
@@ -85,7 +94,10 @@ std::vector<RLE_Block> read_input() {
         if (symbol == EOF_SYMBOL)
             break;
             
-        //Output the symbol
+        // Complete a block
+        // The CRC and Row index must be popped from the back of the block.
+        // Each 32-bit value is outputted as 4 8-bit values, so they
+        // must be recreated into 32-bit values.
         if (symbol == EOB_SYMBOL) { // If this is the end of the block
             u32 crc_highest = ((u32) current_rle_block.data.back()) << 24; // highest order bits of the CRC code
             current_rle_block.data.pop_back();
