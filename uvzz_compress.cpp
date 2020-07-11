@@ -45,7 +45,8 @@ u32 calculate_crc(const Unencoded_Block& unencoded_block) {
 }
 
 // Creates a block of compressed RLE data.
-const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block) {
+// is_last indicates if this is the last block
+const void output_RLE_block(Unencoded_Block& unencoded_block, const bool is_last) {
     u32 crc = calculate_crc(unencoded_block);
 
     // Perform BWT on the unecoded block
@@ -58,14 +59,12 @@ const RLE_Block create_RLE_block(Unencoded_Block& unencoded_block) {
     // Perform RLE on the block
     auto rle_block_data = encode_into_RLE_block(bwt_data);
 
-    return RLE_Block{rle_block_data, crc, bwt_pair.second};
+    output_to_stream(RLE_Block{rle_block_data, crc, bwt_pair.second}, is_last);
 }
 
 int main(){
 
     char next_byte{};
-
-    std::vector <RLE_Block> all_encoded_blocks;
 
     Unencoded_Block unencoded_block{};
 
@@ -78,7 +77,7 @@ int main(){
 
             // Finish a block and start a new one
             if (unencoded_block.size() == BLOCK_MAX){
-                all_encoded_blocks.push_back(create_RLE_block(unencoded_block));
+                output_RLE_block(unencoded_block, false);
                 unencoded_block.clear();
             }
         }
@@ -86,8 +85,8 @@ int main(){
 
     // Create a new block if there still is data.
     if (unencoded_block.size()) {
-        all_encoded_blocks.push_back(create_RLE_block(unencoded_block));
+        output_RLE_block(unencoded_block, false);
     }
 
-    output_to_stream(all_encoded_blocks);
+    output_RLE_block(unencoded_block, true);
 }

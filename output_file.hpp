@@ -26,13 +26,19 @@ enum Output_Stage { // The stage of output for the current block
     End_of_Block
 };
 
-void output_to_stream(std::vector<RLE_Block>& all_blocks) {
-    static OutputBitStream stream{std::cout};
+bool is_initialized = false;
 
-    //Create a static frequency table with a frequency of 1 for 
-    //all symbols except lowercase/uppercase letters (symbols 65-122)
+std::array<u32, EOF_SYMBOL+1> frequencies {};
+std::array<u64, EOF_SYMBOL+2> CF_low {};
+u64 global_cumulative_frequency;
 
-    std::array<u32, EOF_SYMBOL+1> frequencies {};
+u32 lower_bound = 0;  //Bit sequence of all zeros
+u32 upper_bound = ~0; //Bit sequence of all ones
+
+int underflow_counter = 0;
+
+// Initializes the static variables used
+void initialize() {
     frequencies.fill(1);
 
     //Set the frequencies of letters (65 - 122) to 2 
@@ -43,36 +49,25 @@ void output_to_stream(std::vector<RLE_Block>& all_blocks) {
     for(unsigned char c: vowels)
         frequencies.at(c) = 4;
 
-
-    //Now compute cumulative frequencies for each symbol.
-    //We actually want the range [CF_low,CF_high] for each symbol,
-    //but since CF_low(i) = CF_high(i-1), we only really have to compute
-    //the array of lower bounds.
-
-    //The cumulative frequency range for each symbol i will be 
-    //[ CF_low.at(i), CF_low.at(i+1) ) 
-    //(note that it's a half-open interval)
-    std::array<u64, EOF_SYMBOL+2> CF_low {};
     CF_low.at(0) = 0;
     for (unsigned int i = 1; i < EOF_SYMBOL+2; i++){
         CF_low.at(i) = CF_low.at(i-1) + frequencies.at(i-1);
     }
 
-    //We also need to know the global cumulative frequency (of all 
-    //symbols), which will be the denominator of a formula below.
-    //It turns out this value is already stored as CF_low.at(max_symbol+1)
-    u64 global_cumulative_frequency = CF_low.at(EOF_SYMBOL+1);
+    global_cumulative_frequency = CF_low.at(EOF_SYMBOL+1);
 
     assert(global_cumulative_frequency <= 0xffffffff); //If this fails, frequencies must be scaled down
 
+    is_initialized = true;
+}
 
-    u32 lower_bound = 0;  //Bit sequence of all zeros
-    u32 upper_bound = ~0; //Bit sequence of all ones
+void output_to_stream(const RLE_Block& block, const bool is_last) {
+    static OutputBitStream stream{std::cout};
 
-    int underflow_counter = 0;
+    if (!is_initialized) {
+        initialize();
+    }
 
-    // Index in all_blocks of the current block being processed
-    u32 current_block_index = 0;
     // Current index in the block being processed
     u32 current_symbol_index = 0;
     // What to output next for the given block
@@ -83,32 +78,32 @@ void output_to_stream(std::vector<RLE_Block>& all_blocks) {
     // while byte_level = 3 corresponds to the most significant bits.
     // This is used for the 32-bit CRC and BWT row values.
     u8 byte_level = 0;
+    bool finished_block = false; // Indicates if everything has been outputted
 
     while(1){
 
         u32 symbol;
-        if (current_block_index < all_blocks.size()) {
-
-            // The current block being processed
-            const RLE_Block& current_block = all_blocks.at(current_block_index);
-
+        if (is_last) {
+            symbol = EOF_SYMBOL;
+        }
+        else if (!finished_block) {
             switch (stage) {
                 case Data: // Output a compressed symbol to the stream
-                    symbol = (u32) current_block.data.at(current_symbol_index++);
-                    if (current_symbol_index >= current_block.data.size()) {
+                    symbol = (u32) block.data.at(current_symbol_index++);
+                    if (current_symbol_index >= block.data.size()) {
                         stage = BWT_Row_Index;
                         current_symbol_index = 0;
                     }
                     break;
                 case BWT_Row_Index:
-                    symbol = (current_block.row_index >> (8 * byte_level)) & 255;
+                    symbol = (block.row_index >> (8 * byte_level)) & 255;
                     if (byte_level == 3) {
                         stage = CRC;
                     }
                     byte_level = (byte_level + 1) % 4;
                     break;
                 case CRC:
-                    symbol = (current_block.crc >> (8 * byte_level)) & 255;
+                    symbol = (block.crc >> (8 * byte_level)) & 255;
                     if (byte_level == 3) {
                         stage = End_of_Block;
                     }
@@ -116,18 +111,14 @@ void output_to_stream(std::vector<RLE_Block>& all_blocks) {
                     break;
                 case End_of_Block:
                     symbol = EOB_SYMBOL;
-                    stage = Data;
-
-                    ++current_block_index;
+                    finished_block = true;
                     break;
                 default:
                     std::cerr << "ERROR: Invalid block output state." << std::endl;
                     exit(EXIT_FAILURE);
             }
         } else {
-            //If we couldn't retrieve a character, set the next symbol
-            //to the EOF marker 
-            symbol = EOF_SYMBOL;
+            return;
         }
 
         //For safety, we will use u64 for all of our intermediate calculations.
@@ -186,7 +177,7 @@ void output_to_stream(std::vector<RLE_Block>& all_blocks) {
         }
 
         if (symbol == EOF_SYMBOL)
-            break; //If we just wrote the EOF symbol, we're done
+            break;
     }
 
     //When encoding is finished, we need to dump out just enough of the remaining
@@ -211,9 +202,6 @@ void output_to_stream(std::vector<RLE_Block>& all_blocks) {
     stream.push_bit(0);
     stream.push_bit(1);
     stream.flush_to_byte(1); //Emit enough 1s to fill out the byte
-
-    // Output the CRC
-    //stream.push_u32(crc);
 }
 
 #endif

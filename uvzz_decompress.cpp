@@ -65,11 +65,9 @@ void decompress_block(const RLE_Block& rle_block) {
 
 int main(){
 
-    std::vector<RLE_Block> all_blocks = read_input();
-
-    // Uncompress all the blocks
-    for(RLE_Block& block : all_blocks) {
-        // Process the compressed block
-        decompress_block(block);
+    RLE_Block compressed_block = read_block();
+    while (compressed_block.data.size() != 0) {
+        decompress_block(compressed_block);
+        compressed_block = read_block();
     }
 }

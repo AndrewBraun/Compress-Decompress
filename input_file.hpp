@@ -18,15 +18,18 @@
 #include "constants.hpp"
 #include "input_stream.hpp"
 
-// Reads a block of input from the stream using Arithmetic Coding.
-// Outputs a block of RLE literal and run length symbols.
-std::vector<RLE_Block> read_input() {
-    static InputBitStream stream{std::cin};
-    
-    //Create a static frequency table with a frequency of 1 for 
-    //all symbols except lowercase/uppercase letters (symbols 65-122)
+bool is_initialized = false;
 
-    std::array<u32, EOF_SYMBOL+1> frequencies {};
+std::array<u32, EOF_SYMBOL+1> frequencies {};
+std::array<u64, EOF_SYMBOL+2> CF_low {};
+u64 global_cumulative_frequency;
+
+u32 lower_bound = 0;
+u32 upper_bound = ~0;
+
+u32 encoded_bits = 0;
+
+void initialize() {
     frequencies.fill(1);
 
     //Set the frequencies of letters (65 - 122) to 2 
@@ -37,39 +40,30 @@ std::vector<RLE_Block> read_input() {
     for(unsigned char c: vowels)
         frequencies.at(c) = 4;
 
-
-    //Now compute cumulative frequencies for each symbol.
-    //We actually want the range [CF_low,CF_high] for each symbol,
-    //but since CF_low(i) = CF_high(i-1), we only really have to compute
-    //the array of lower bounds.
-
-    //The cumulative frequency range for each symbol i will be 
-    //[ CF_low.at(i), CF_low.at(i+1) ) 
-    //(note that it's a half-open interval)
-    std::array<u64, EOF_SYMBOL+2> CF_low {};
     CF_low.at(0) = 0;
     for (unsigned int i = 1; i < EOF_SYMBOL+2; i++){
         CF_low.at(i) = CF_low.at(i-1) + frequencies.at(i-1);
     }
 
-    //We also need to know the global cumulative frequency (of all 
-    //symbols), which will be the denominator of a formula below.
-    //It turns out this value is already stored as CF_low.at(max_symbol+1)
-    u64 global_cumulative_frequency = CF_low.at(EOF_SYMBOL+1);
+    global_cumulative_frequency = CF_low.at(EOF_SYMBOL+1);
     
     assert(global_cumulative_frequency <= 0xffffffff); //If this fails, frequencies must be scaled down
 
+    is_initialized = true;
+}
 
-    u32 lower_bound = 0;
-    u32 upper_bound = ~0;
+// Reads a block of input from the stream using Arithmetic Coding.
+RLE_Block read_block() {
+    static InputBitStream stream{std::cin};
 
-    u32 encoded_bits = 0;
-    for(int i = 0; i < 32; i++){
-        encoded_bits = (encoded_bits<<1) | stream.read_bit();
+    if (!is_initialized) {
+        initialize();
+        for(int i = 0; i < 32; i++){
+            encoded_bits = (encoded_bits<<1) | stream.read_bit();
+        }
     }
 
-    std::vector <RLE_Block> all_blocks; // List of all compressed blocks
-    RLE_Block current_rle_block{}; // Current block being read
+    RLE_Block current_block{}; // Current block being read
 
     while(1){
         //For safety, we will use u64 for all of our intermediate calculations.
@@ -89,42 +83,38 @@ std::vector<RLE_Block> read_input() {
         u32 symbol = 0;
         while(CF_low.at(symbol+1) <= scaled_symbol)
             symbol++;
-
+        
         //If the symbol is the EOF marker, we're done
         if (symbol == EOF_SYMBOL)
             break;
-            
+
         // Complete a block
         // The CRC and Row index must be popped from the back of the block.
         // Each 32-bit value is outputted as 4 8-bit values, so they
         // must be recreated into 32-bit values.
         if (symbol == EOB_SYMBOL) { // If this is the end of the block
-            u32 crc_highest = ((u32) current_rle_block.data.back()) << 24; // highest order bits of the CRC code
-            current_rle_block.data.pop_back();
-            u32 crc_high = ((u32) current_rle_block.data.back()) << 16; // second highest order bits of the CRC code
-            current_rle_block.data.pop_back();
-            u32 crc_low = ((u32) current_rle_block.data.back()) << 8; // second lowest order bits of the CRC code
-            current_rle_block.data.pop_back();
-            u32 crc_lowest = (u32) current_rle_block.data.back(); // lowest order bits of the CRC code
-            current_rle_block.data.pop_back();
+            u32 crc_highest = ((u32) current_block.data.back()) << 24; // highest order bits of the CRC code
+            current_block.data.pop_back();
+            u32 crc_high = ((u32) current_block.data.back()) << 16; // second highest order bits of the CRC code
+            current_block.data.pop_back();
+            u32 crc_low = ((u32) current_block.data.back()) << 8; // second lowest order bits of the CRC code
+            current_block.data.pop_back();
+            u32 crc_lowest = (u32) current_block.data.back(); // lowest order bits of the CRC code
+            current_block.data.pop_back();
 
-            u32 row_highest = (u32) current_rle_block.data.back() << 24; // highest order bits of the BWT row code
-            current_rle_block.data.pop_back();
-            u32 row_high = (u32) current_rle_block.data.back() << 16; // second highest order bits of the BWT row code
-            current_rle_block.data.pop_back();
-            u32 row_low = (u32) current_rle_block.data.back() << 8; // second lowest order bits of the BWT row code
-            current_rle_block.data.pop_back();
-            u32 row_lowest = (u32) current_rle_block.data.back(); // lowest order bits of the BWT row code
-            current_rle_block.data.pop_back();
+            u32 row_highest = (u32) current_block.data.back() << 24; // highest order bits of the BWT row code
+            current_block.data.pop_back();
+            u32 row_high = (u32) current_block.data.back() << 16; // second highest order bits of the BWT row code
+            current_block.data.pop_back();
+            u32 row_low = (u32) current_block.data.back() << 8; // second lowest order bits of the BWT row code
+            current_block.data.pop_back();
+            u32 row_lowest = (u32) current_block.data.back(); // lowest order bits of the BWT row code
+            current_block.data.pop_back();
 
-            current_rle_block.crc = crc_highest | crc_high | crc_low | crc_lowest;
-            current_rle_block.row_index = row_highest | row_high | row_low | row_lowest;
-            all_blocks.push_back(current_rle_block);
-
-            current_rle_block = RLE_Block{};
-
+            current_block.crc = crc_highest | crc_high | crc_low | crc_lowest;
+            current_block.row_index = row_highest | row_high | row_low | row_lowest;
         } else {
-            current_rle_block.data.push_back((u16) symbol);
+            current_block.data.push_back((u16) symbol);
         }
 
         //Now that we know what symbol comes next, we repeat the same process as the compressor
@@ -198,9 +188,12 @@ std::vector<RLE_Block> read_input() {
                 break;
             }
         }
+
+        if (symbol == EOB_SYMBOL)
+            break;
     }
 
-    return all_blocks;
+    return current_block;
 }
 
 #endif
