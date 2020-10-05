@@ -2,6 +2,10 @@ Written by Andrew Braun.
 
 This is a file compressor and decompressor.
 
+The compressor reads a file piped in through standard input and outupts the compresssed
+file to standard output. Similarly, the decompressor reads a compressed file from
+standard input and outputs the decompressed file to standard output.
+
 ## Compressed file format
 
 The format of a compressed file consists of a series of blocks. All the blocks are
