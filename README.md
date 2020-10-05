@@ -1,8 +1,6 @@
-# SENG 480B Assignment 3
+Written by Andrew Braun.
 
-Written by Andrew Braun (V00851919).
-
-This is a compressor and decompressor for Path 1 (process-oriented) of Assignment 3.
+This is a file compressor and decompressor.
 
 ## Compressed file format
 

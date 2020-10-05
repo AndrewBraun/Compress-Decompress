@@ -1,5 +1,4 @@
 /* output_file.hpp
-   CSC 485B/CSC 578B/SENG 480B - Summer 2020
 
    Outputs the compressed data to standard output.
    For compatibility with the Arithmetic Coding symbol table,
@@ -7,7 +6,6 @@
    four 8-bit values.
 
    Andrew Braun
-   V00851919
    With code portions from B. Bird
 */ 
 

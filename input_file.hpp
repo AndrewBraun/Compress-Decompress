@@ -6,7 +6,6 @@
    Reads the compressed input file for the decompressor.
    
    Andrew Braun
-   V00851919
    With code portions from B. Bird
 */
 

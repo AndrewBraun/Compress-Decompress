@@ -2,10 +2,8 @@
 #define BWT_H
 
 /* BWT.hpp
-   CSC 485B/CSC 578B/SENG 480B
 
    Andrew Braun
-   V00851919
 
    Performs the BWT and inverse BWT transformations on blocks of data.
 */

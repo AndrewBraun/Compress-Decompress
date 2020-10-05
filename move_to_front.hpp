@@ -6,7 +6,6 @@
    Performs and undoes Move-to-Front transformations on blocks.
    
    Andrew Braun
-   V00851919
 */
 
 #include <algorithm>

@@ -1,9 +1,8 @@
-/* uvzz_decompress.cpp
+/* decompressor.cpp
 
    Decompresses an inputted compressed file.
    
    Andrew Braun
-   V00851919
    With code portions from B. Bird
 */
 

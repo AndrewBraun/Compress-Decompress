@@ -3,7 +3,6 @@
    Contains constants for the compressor and decompressor.
    
    Andrew Braun
-   V00851919
    With code portions from B. Bird
 */
 

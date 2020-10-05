@@ -1,9 +1,8 @@
-/* uvzz_compress.cpp
+/* compressor.cpp
 
    Compresses an inputted file.
    
    Andrew Braun
-   V00851919
    With code portions from B. Bird
 */
 
